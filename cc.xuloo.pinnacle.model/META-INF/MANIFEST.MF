@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Model
+Bundle-SymbolicName: cc.xuloo.pinnacle.model
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: cc.xuloo.pinnacle.model
+Require-Bundle: cc.xuloo.joda.time;bundle-version="1.0.0",
+ cc.xuloo.sports.api;bundle-version="1.0.0",
+ cc.xuloo.sports.utils;bundle-version="1.0.0",
+ org.eclipse.e4.core.services;bundle-version="1.0.0",
+ org.eclipse.osgi;bundle-version="3.8.1",
+ org.apache.commons.lang3;bundle-version="3.1.0",
+ cc.xuloo.ds;bundle-version="1.0.0"
