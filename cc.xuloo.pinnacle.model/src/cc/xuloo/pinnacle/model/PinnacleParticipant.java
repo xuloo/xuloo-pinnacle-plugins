@@ -66,4 +66,8 @@ public class PinnacleParticipant {
 	public PinnacleOdds getOdds() {
 		return odds;
 	}
+	
+	public boolean equals(PinnacleParticipant other) {
+		return contestantNum == other.contestantNum && status.equals(other.status);
+	}
 }

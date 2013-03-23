@@ -128,7 +128,7 @@ public class PinnacleEvent {
 	 * @see cc.xuloo.pinnacle.model.IPinnacleEvent#equals(cc.xuloo.pinnacle.model.IPinnacleEvent)
 	 */
 	public boolean equals(PinnacleEvent other) {
-		return sportType.equals(other.getSportType()) && league.equals(other.getLeague()) && dateTime.equals(other.getDateTime());
+		return gameNumber == other.gameNumber;
 	}
 	
 	/* (non-Javadoc)
