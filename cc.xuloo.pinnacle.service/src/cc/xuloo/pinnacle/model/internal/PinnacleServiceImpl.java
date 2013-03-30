@@ -1,21 +1,30 @@
 package cc.xuloo.pinnacle.model.internal;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.eclipse.e4.core.services.events.IEventBroker;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 
 import cc.xuloo.pinnacle.model.IPinnacleService;
 import cc.xuloo.pinnacle.model.PinnacleConstants;
@@ -56,6 +65,20 @@ public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHan
 				broker.send("TOPIC_PINNACLE_STATUS_UPDATE", "Response received");
 				
 				InputStream instream = entity.getContent();
+				
+				File tempDir = FileUtils.getTempDirectory();
+				File pinnacleDir = new File(tempDir, "pinnacle");
+				
+				FileUtils.forceMkdir(pinnacleDir);
+				
+				File file = new File(pinnacleDir, String.format("pinnacle-%s", DateTimeFormat.forPattern("yyyyMMddHHmmss").print(DateTime.now())));
+				
+				OutputStream os = new FileOutputStream(file);
+				
+				IOUtils.copy(instream, os);
+				
+				os.close();
+				
 				PinnacleLineFeed plf = null;
 				
 				try {
@@ -64,11 +87,20 @@ public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHan
 					
 					JAXBContext jaxbContext = JAXBContext.newInstance("cc.xuloo.pinnacle.model");
 					Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-					//unmarshaller.setEventHandler(this);
-					plf = (PinnacleLineFeed) unmarshaller.unmarshal(instream);
+
+					InputStream is = new FileInputStream(file);
+					
+					plf = (PinnacleLineFeed) unmarshaller.unmarshal(is);
+					
+					is.close();
+					FileUtils.forceDelete(file);
 					
 					broker.send("TOPIC_PINNACLE_STATUS_UPDATE", "Unmarshalling complete");
-					
+				} catch (JAXBException e) {
+					System.out.println("Problem unmarshalling - " + e.getMessage());
+					e.printStackTrace();
+				} catch (Exception e) {
+					e.printStackTrace();
 				} finally {
 					instream.close();
 				}
