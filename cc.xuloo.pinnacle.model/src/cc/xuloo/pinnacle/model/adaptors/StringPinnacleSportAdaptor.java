@@ -2,18 +2,18 @@ package cc.xuloo.pinnacle.model.adaptors;
 
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
-import cc.xuloo.pinnacle.model.PinnacleSport;
+import cc.xuloo.pinnacle.PinnacleSportType;
 
-public class StringPinnacleSportAdaptor extends XmlAdapter<String, PinnacleSport> {
+public class StringPinnacleSportAdaptor extends XmlAdapter<String, PinnacleSportType> {
 
 	@Override
-	public String marshal(PinnacleSport value) throws Exception {
-		return PinnacleSport.toString(value);
+	public String marshal(PinnacleSportType value) throws Exception {
+		return PinnacleSportType.toString(value);
 	}
 
 	@Override
-	public PinnacleSport unmarshal(String value) throws Exception {
-		return PinnacleSport.from(value);
+	public PinnacleSportType unmarshal(String value) throws Exception {
+		return PinnacleSportType.from(value);
 	}
 
 }

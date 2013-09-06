@@ -1,6 +1,4 @@
-package cc.xuloo.pinnacle.model;
-
-import cc.xuloo.sports.api.TeamType;
+package cc.xuloo.pinnacle;
 
 public enum PinnacleParticipantStatus {
 
@@ -25,11 +23,5 @@ public enum PinnacleParticipantStatus {
 		}
 		
 		return NONE;
-	}
-	
-	public TeamType toTeamType() {
-		if (name.equals("Home")) return TeamType.HOME;
-		if (name.equals("Visiting")) return TeamType.AWAY;
-		return TeamType.DRAW;
 	}
 }

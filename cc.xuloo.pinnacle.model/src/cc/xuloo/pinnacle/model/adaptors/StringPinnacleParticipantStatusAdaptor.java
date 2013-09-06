@@ -2,7 +2,7 @@ package cc.xuloo.pinnacle.model.adaptors;
 
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
-import cc.xuloo.pinnacle.model.PinnacleParticipantStatus;
+import cc.xuloo.pinnacle.PinnacleParticipantStatus;
 
 public class StringPinnacleParticipantStatusAdaptor extends XmlAdapter<String, PinnacleParticipantStatus> {
 

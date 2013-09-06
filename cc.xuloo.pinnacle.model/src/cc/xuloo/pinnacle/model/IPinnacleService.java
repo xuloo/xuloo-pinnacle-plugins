@@ -1,10 +1,12 @@
 package cc.xuloo.pinnacle.model;
 
+import java.util.List;
+
 import org.eclipse.e4.core.services.events.IEventBroker;
 
 public interface IPinnacleService {
 
-	PinnacleLineFeed getEvents(IEventBroker broker, long lastUpdate);
+	List<PinnacleEventElement> getEvents(IEventBroker broker);
 	
 	void addListener(PinnacleServiceListener listener);
 	

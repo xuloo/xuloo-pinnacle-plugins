@@ -4,7 +4,8 @@ Bundle-Name: Model
 Bundle-SymbolicName: cc.xuloo.pinnacle.model
 Bundle-Version: 1.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: cc.xuloo.pinnacle.model
+Export-Package: cc.xuloo.pinnacle,
+ cc.xuloo.pinnacle.model
 Require-Bundle: cc.xuloo.joda.time;bundle-version="1.0.0",
  cc.xuloo.sports.api;bundle-version="1.0.0",
  cc.xuloo.sports.utils;bundle-version="1.0.0",
