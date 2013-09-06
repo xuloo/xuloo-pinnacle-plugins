@@ -13,6 +13,7 @@ import javax.xml.bind.ValidationEventHandler;
 
 import org.eclipse.e4.core.services.events.IEventBroker;
 
+import cc.xuloo.pinnacle.PinnacleParticipantStatus;
 import cc.xuloo.pinnacle.model.IPinnacleService;
 import cc.xuloo.pinnacle.model.PinnacleEventElement;
 import cc.xuloo.pinnacle.model.PinnacleFeedElement;
@@ -81,6 +82,9 @@ public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHan
 						for (PinnacleEventElement event : league.getEvents()) {
 						
 							event.setSport(sport);
+							
+							event.getHomeTeam().setStatus(PinnacleParticipantStatus.HOME);
+							event.getAwayTeam().setStatus(PinnacleParticipantStatus.VISITING);
 							
 							events.add(event);
 						}
