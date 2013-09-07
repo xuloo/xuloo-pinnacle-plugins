@@ -3,10 +3,14 @@ package cc.xuloo.pinnacle.model.internal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
@@ -29,7 +33,7 @@ public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHan
 
 	private List<PinnacleServiceListener> listeners = Collections.synchronizedList(new ArrayList<PinnacleServiceListener>());
 	
-	private long lastUpdate = 0L;
+	private Map<Integer, Long> feedTimeById = new HashMap<Integer, Long>();
 	
 	private ExecutorService executor = Executors.newFixedThreadPool(20);
 	
@@ -40,16 +44,34 @@ public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHan
 		
 		List<PinnacleSportSportElement> sports = Pinnacle.getSports();
 		
+		Collection<GetFeed> requests = Lists.newArrayList();
+		
 		for (PinnacleSportSportElement sport : sports) {
 			
 			if (sport.isFeedContents()) {
 				try {
-					Collection<PinnacleEventElement> collection = executor.submit(new GetFeed(sport.getName(), sport.getId())).get();
-					events.addAll(collection);
+					
+					requests.add(new GetFeed(sport.getName(), sport.getId()));
+					
 				} catch (Exception e) {
 					
 				}
 			}
+		}
+		
+		try {
+			List<Future<Collection<PinnacleEventElement>>> lists = executor.invokeAll(requests);
+			
+			for (Future<Collection<PinnacleEventElement>> future : lists) {
+				events.addAll(future.get());
+			}
+			
+		} catch (InterruptedException e) {
+			System.err.println(e.getMessage());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			System.err.println(e.getMessage());
+			e.printStackTrace();
 		}
 		
 		return events;
@@ -71,9 +93,30 @@ public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHan
 			
 			List<PinnacleEventElement> events = Lists.newArrayList();
 			
-			Optional<PinnacleFeedElement> feed = Pinnacle.getFeed(id, String.valueOf(lastUpdate));
+			Optional<PinnacleFeedElement> feed = null;
+			
+//			System.out.println("K=========================================================");
+//			for (Integer key : feedTimeById.keySet()) {
+//				System.out.println("==========================" + key + " " + feedTimeById.get(key) + " " + feedTimeById.get(key).getClass().getName() + "===========================");
+//			}
+//			System.out.println("HAS? " + id + " " + feedTimeById.containsKey(id));
+//			System.out.println("K=========================================================");
+			
+			if (feedTimeById.containsKey(id)) {
+				feed = Pinnacle.getFeed(id, String.valueOf(feedTimeById.get(id)));
+			} else {
+				feed = Pinnacle.getFeed(id);
+			}
 			
 			if (feed.isPresent()) {
+				
+				Long lastUpdate = feed.get().getFeed();
+				
+//				System.out.println("=========================================================");
+//				System.out.println("==========================" + id + " " + lastUpdate + "===========================");
+//				System.out.println("=========================================================");
+				
+				feedTimeById.put(id, lastUpdate);
 				
 				for (PinnacleFeedSportElement fSport : feed.get().getSports()) {
 					
@@ -92,87 +135,10 @@ public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHan
 				}
 			}
 			
-			return null;
+			return events;
 		}
 		
 	}
-
-//	private PinnacleLineFeed updateLineFeed(IEventBroker broker, long lastUpdate) {
-//
-//		broker.send("TOPIC_PINNACLE_STATUS_UPDATE", "Requesting Pinnacle events");
-//		
-//		HttpClient httpclient = new DefaultHttpClient();
-//		
-//		String url = PinnacleConstants.DATA_URL;
-//		
-//		if (lastUpdate > 0) {
-//			url = String.format("%s?last=%s", url, lastUpdate);
-//		}
-//		
-//		System.out.println("updating pinnacle feed from '" + url + "'");
-//		
-//		HttpGet httpget = new HttpGet(url);
-//		
-//		try {
-//			HttpResponse response = httpclient.execute(httpget);
-//			HttpEntity entity = response.getEntity();
-//			if (entity != null) {
-//				
-//				broker.send("TOPIC_PINNACLE_STATUS_UPDATE", "Response received");
-//				
-//				InputStream instream = entity.getContent();
-//				
-//				File tempDir = FileUtils.getTempDirectory();
-//				File pinnacleDir = new File(tempDir, "pinnacle");
-//				
-//				FileUtils.forceMkdir(pinnacleDir);
-//				
-//				File file = new File(pinnacleDir, String.format("pinnacle-%s", DateTimeFormat.forPattern("yyyyMMddHHmmss").print(DateTime.now())));
-//				
-//				OutputStream os = new FileOutputStream(file);
-//				
-//				IOUtils.copy(instream, os);
-//				
-//				os.close();
-//				
-//				PinnacleLineFeed plf = null;
-//				
-//				try {
-//					
-//					broker.send("TOPIC_PINNACLE_STATUS_UPDATE", "Unmarshalling XML");
-//					
-//					JAXBContext jaxbContext = JAXBContext.newInstance("cc.xuloo.pinnacle.model");
-//					Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-//
-//					InputStream is = new FileInputStream(file);
-//					
-//					plf = (PinnacleLineFeed) unmarshaller.unmarshal(is);
-//					
-//					is.close();
-//					FileUtils.forceDelete(file);
-//					
-//					broker.send("TOPIC_PINNACLE_STATUS_UPDATE", "Unmarshalling complete");
-//				} catch (JAXBException e) {
-//					System.out.println("Problem unmarshalling - " + e.getMessage());
-//					e.printStackTrace();
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				} finally {
-//					instream.close();
-//				}
-//
-//				return plf;
-//			}
-//
-//			return null;
-//
-//		} catch (Exception e) {
-//			System.out.println("exception hitting service endpoint "
-//					+ e.getMessage());
-//			e.printStackTrace();
-//			return null;
-//		}
-//	}
 
 	public boolean handleEvent(ValidationEvent event) {
 		if (event.getMessage().startsWith("unexpected"))

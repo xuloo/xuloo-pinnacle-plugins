@@ -122,6 +122,7 @@ public class Pinnacle {
 		String url = createUrl(FEED_URI, params);
 		
 //		Logger.info("calling url '" + url + "'");
+		System.out.println("calling url '" + url + "'");
 		
 		Optional<PinnacleResponseElement> response = call(url, ctx);
 		
