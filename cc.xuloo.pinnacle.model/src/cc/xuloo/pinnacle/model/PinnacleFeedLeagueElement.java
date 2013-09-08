@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name="league")
 public class PinnacleFeedLeagueElement {
 
-	@XmlAttribute(name="id")
+	@XmlElement(name="id")
 	private Integer id;
 
 	@XmlElementWrapper(name="events")

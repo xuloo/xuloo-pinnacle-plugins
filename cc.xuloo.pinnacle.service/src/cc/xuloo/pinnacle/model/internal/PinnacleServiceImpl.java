@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -23,11 +24,13 @@ import cc.xuloo.pinnacle.model.PinnacleEventElement;
 import cc.xuloo.pinnacle.model.PinnacleFeedElement;
 import cc.xuloo.pinnacle.model.PinnacleFeedLeagueElement;
 import cc.xuloo.pinnacle.model.PinnacleFeedSportElement;
+import cc.xuloo.pinnacle.model.PinnacleLeagueLeagueElement;
 import cc.xuloo.pinnacle.model.PinnacleServiceListener;
 import cc.xuloo.pinnacle.model.PinnacleSportSportElement;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHandler {
 
@@ -37,44 +40,101 @@ public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHan
 	
 	private ExecutorService executor = Executors.newFixedThreadPool(20);
 	
+	private List<PinnacleSportSportElement> sports = Collections.emptyList();
+	
+	private Map<Integer, String> leagueNameById = Maps.newHashMap();
+	
 	@Override
 	public synchronized List<PinnacleEventElement> getEvents(IEventBroker broker) {
 		
 		List<PinnacleEventElement> events = Lists.newArrayList();
 		
-		List<PinnacleSportSportElement> sports = Pinnacle.getSports();
-		
-		Collection<GetFeed> requests = Lists.newArrayList();
-		
-		for (PinnacleSportSportElement sport : sports) {
-			
-			if (sport.isFeedContents()) {
-				try {
+		if (sports.size() == 0) {
+			 sports = Pinnacle.getSports();
+
+			 Collection<GetLeagues> leagueRequests = Lists.newArrayList();
+			 
+			 for (PinnacleSportSportElement sport : sports) {
+				 
+				 try {
+						
+					 leagueRequests.add(new GetLeagues(sport.getId()));
+						
+					} catch (Exception e) {
+						
+					}
+			 }
+			 
+			 try {
+					List<Future<Collection<PinnacleLeagueLeagueElement>>> lists = executor.invokeAll(leagueRequests);
 					
-					requests.add(new GetFeed(sport.getName(), sport.getId()));
+					for (Future<Collection<PinnacleLeagueLeagueElement>> future : lists) {
+						
+						Collection<PinnacleLeagueLeagueElement> leagueElements = future.get();
+						
+						for (PinnacleLeagueLeagueElement leagueElement : leagueElements) {
+							leagueNameById.put(leagueElement.getId(), leagueElement.getName());
+						}
+					}
 					
-				} catch (Exception e) {
-					
+				} catch (InterruptedException e) {
+					System.err.println(e.getMessage());
+					e.printStackTrace();
+				} catch (ExecutionException e) {
+					System.err.println(e.getMessage());
+					e.printStackTrace();
 				}
-			}
 		}
 		
-		try {
-			List<Future<Collection<PinnacleEventElement>>> lists = executor.invokeAll(requests);
+		if (sports.size() > 0) {
 			
-			for (Future<Collection<PinnacleEventElement>> future : lists) {
-				events.addAll(future.get());
+			Collection<GetFeed> requests = Lists.newArrayList();
+			
+			for (PinnacleSportSportElement sport : sports) {
+				
+				if (sport.isFeedContents()) {
+					try {
+						
+						requests.add(new GetFeed(sport.getName(), sport.getId()));
+						
+					} catch (Exception e) {
+						
+					}
+				}
 			}
 			
-		} catch (InterruptedException e) {
-			System.err.println(e.getMessage());
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			System.err.println(e.getMessage());
-			e.printStackTrace();
+			try {
+				List<Future<Collection<PinnacleEventElement>>> lists = executor.invokeAll(requests);
+				
+				for (Future<Collection<PinnacleEventElement>> future : lists) {
+					events.addAll(future.get());
+				}
+				
+			} catch (InterruptedException e) {
+				System.err.println(e.getMessage());
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				System.err.println(e.getMessage());
+				e.printStackTrace();
+			}
 		}
 		
 		return events;
+	}
+	
+	private class GetLeagues implements Callable<Collection<PinnacleLeagueLeagueElement>> {
+		
+		private int id;
+		
+		public GetLeagues(int id) {
+			this.id = id;
+		}
+
+		@Override
+		public Collection<PinnacleLeagueLeagueElement> call() throws Exception {
+			
+			return Pinnacle.getLeagues(id);
+		}
 	}
 	
 	private class GetFeed implements Callable<Collection<PinnacleEventElement>> {
@@ -122,9 +182,16 @@ public class PinnacleServiceImpl implements IPinnacleService, ValidationEventHan
 					
 					for (PinnacleFeedLeagueElement league : fSport.getLeagues()) {
 						
+						String leagueName = "--";
+						
+						if (leagueNameById.containsKey(league.getId())) {
+							leagueName = leagueNameById.get(league.getId());
+						}
+						
 						for (PinnacleEventElement event : league.getEvents()) {
 						
 							event.setSport(sport);
+							event.setLeague(leagueName);
 							
 							event.getHomeTeam().setStatus(PinnacleParticipantStatus.HOME);
 							event.getAwayTeam().setStatus(PinnacleParticipantStatus.VISITING);

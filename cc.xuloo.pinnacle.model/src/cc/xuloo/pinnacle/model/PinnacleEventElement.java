@@ -43,6 +43,8 @@ public class PinnacleEventElement {
 	private PinnacleParticipantElement[] participants;
 	
 	private String sport;
+	
+	private String league;
 
 	public PinnacleEventElement() {
 
@@ -82,6 +84,14 @@ public class PinnacleEventElement {
 	
 	public void setSport(String sport) {
 		this.sport = sport;
+	}
+	
+	public String getLeague() {
+		return league;
+	}
+	
+	public void setLeague(String league) {
+		this.league = league;
 	}
 
 	public boolean equals(Object obj) {
